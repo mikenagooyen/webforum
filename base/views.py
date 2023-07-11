@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -15,7 +17,11 @@ threads = [
 
 ]
 
+
 def loginPage(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -36,10 +42,12 @@ def loginPage(request):
     context = {}
     return render(request, 'base/login_register.html', context)
 
+
 def logoutUser(request):
     logout(request)
 
     return redirect('home')
+
 
 def home(request):
     q = request.GET.get('q') if request.GET.get('q') != None else ''
@@ -55,12 +63,15 @@ def home(request):
     context = {'threads': threads, 'sections': sections}
     return render(request, 'base/home.html', context)
 
+
 def thread(request, pk):
     thread = Thread.objects.get(id=pk)
 
     context = {"thread" : thread}
     return render(request, 'base/thread.html', context)
 
+
+@login_required(login_url='/login/')
 def createThread(request):
     form = ThreadForm()
     if request.method == "POST":
@@ -72,9 +83,14 @@ def createThread(request):
     context = {'form': form}
     return render(request, 'base/thread_form.html', context)
 
+
+@login_required(login_url='/login/')
 def updateThread(request, pk):
     thread = Thread.objects.get(id=pk)
     form = ThreadForm(instance=thread)
+
+    if request.user != thread.host:
+        return HttpResponse("Invalid action")
 
     if request.method == "POST":
         form = ThreadForm(request.POST, instance=thread)
@@ -84,6 +100,7 @@ def updateThread(request, pk):
     
     context = {'form': form}
     return render(request, 'base/thread_form.html', context)
+
 
 def deleteThread(request, pk):
     thread = Thread.objects.get(id=pk)
