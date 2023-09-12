@@ -14,7 +14,7 @@ class Thread(models.Model):
     section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=200)
     post = models.TextField()
-    #comments = 
+    participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 

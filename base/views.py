@@ -6,8 +6,8 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
-from .models import Thread, Section
-from .forms import ThreadForm
+from .models import Thread, Section, Comment
+from .forms import ThreadForm, CommentForm
 
 # Create your views here.
 
@@ -85,8 +85,19 @@ def home(request):
 
 def thread(request, pk):
     thread = Thread.objects.get(id=pk)
+    thread_comments = thread.comment_set.all().order_by('-created')
+    participants = thread.participants.all()
 
-    context = {"thread" : thread}
+    if request.method == "POST":
+        comment = Comment.objects.create(
+            user = request.user,
+            thread = thread,
+            post = request.POST.get('body')
+        )
+        thread.participants.add(request.user)
+        return redirect('thread', pk=thread.id)
+
+    context = {'thread' : thread, 'comments': thread_comments, 'participants': participants}
     return render(request, 'base/thread.html', context)
 
 
@@ -109,7 +120,7 @@ def updateThread(request, pk):
     form = ThreadForm(instance=thread)
 
     if request.user != thread.host:
-        return HttpResponse("Invalid action")
+        return HttpResponse("User cannot perform this operation.")
 
     if request.method == "POST":
         form = ThreadForm(request.POST, instance=thread)
@@ -121,11 +132,47 @@ def updateThread(request, pk):
     return render(request, 'base/thread_form.html', context)
 
 
+@login_required(login_url='/login/')
 def deleteThread(request, pk):
     thread = Thread.objects.get(id=pk)
+
+    if request.user != Thread.host:
+        return HttpResponse("User cannot perform this operation.")
+
     if request.method == "POST":
         thread.delete()
         return redirect('home')
 
-    return render(request, 'base/delete.html', {'obj':thread})
+    return render(request, 'base/delete.html', {'obj': thread})
+
+
+@login_required(login_url='/login/')
+def updateComment(request, pk):
+    comment = Comment.objects.get(id=pk)
+    form = CommentForm(instance=comment)
+
+    if request.user != comment.user:
+        return HttpResponse("User cannot perform this operation.")
+
+    if request.method == "POST":
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
     
+    context = {'form': form}
+    return render(request, 'base/thread_form.html', context)
+
+
+@login_required(login_url='/login/')
+def deleteComment(request, pk):
+    comment = Comment.objects.get(id=pk)
+
+    if request.user != comment.user:
+        return HttpResponse("User cannot perform this operation.")
+    
+    if request.method == "POST":
+        comment.delete()
+        return redirect('home')
+
+    return render(request, 'base/delete.html', {'obj': comment})

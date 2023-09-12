@@ -2,7 +2,52 @@
 
 {% block content%}
 
-<h1>{{thread.name}}</h1>
-<h2>{{thread.post}}</h2>
+<style>
+    .thread-container{
+        display:grid;
+        grid-template-columns: 3fr 1fr;
+    }
+</style>
 
+<div class="thread-container">
+    <div>
+        <h1>{{thread.name}}</h1>
+        <p>{{thread.post}}</p>
+        <div class="comment-wrapper">
+            <h3>Comments</h3>
+            <hr>
+
+            {% for comment in comments %}
+                <div>
+                    {% if request.user == comment.user %}
+                    <a href="{% url 'update-comment' comment.id %}">Edit</a>
+                    <a href="{% url 'delete-comment' comment.id %}">Delete</a>
+                    {% endif %}
+                    <small>@{{comment.user}} {{comment.created|timesince}} ago</small>
+                    <p>{{comment.post}}</p>
+                    <hr>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if request.user.is_authenticated %}
+            <div class="comment-form">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <input type="text" name="body" placeholder="Write your comment here">
+                </form>
+            </div>
+        {% endif %}      
+    </div>
+
+    <div>
+        <h3>Participants</h3>
+        <hr>
+        {% for user in participants %}
+            <div>
+                <p>@{{user.username}}</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
