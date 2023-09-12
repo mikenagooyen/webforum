@@ -77,15 +77,18 @@ def home(request):
         Q(post__icontains=q)
         )
 
-    sections = Section.objects.all()
+    sections = Section.objects.all() 
+    thread_count = threads.count()
+    thread_comments = Comment.objects.filter(Q(thread__section__name__icontains=q))
 
-    context = {'threads': threads, 'sections': sections}
+    context = {'threads': threads, 'sections': sections,
+            'thread_count': thread_count, 'thread_comments': thread_comments}
     return render(request, 'base/home.html', context)
 
 
 def thread(request, pk):
     thread = Thread.objects.get(id=pk)
-    thread_comments = thread.comment_set.all().order_by('-created')
+    thread_comments = thread.comment_set.all()
     participants = thread.participants.all()
 
     if request.method == "POST":
