@@ -2,7 +2,7 @@
 <hr>
 {% for comment in thread_comments %}
     <div>
-        <small>@{{comment.user}} {{comment.created|timesince}}</small>
+        <small><a href="{% url 'user-profile' comment.user.id %}">@{{comment.user}}</a> {{comment.created|timesince}}</small>
         <small>replied to {{comment.thread}}</small>
         <p>{{comment}}</p>
 

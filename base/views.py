@@ -86,6 +86,17 @@ def home(request):
     return render(request, 'base/home.html', context)
 
 
+def userProfile(request, pk):
+    user = User.objects.get(id=pk)
+    threads = user.thread_set.all()
+    thread_comments = user.comment_set.all()
+    sections = Section.objects.all()
+
+    context = {'user': user, 'threads': threads, 
+            'thread_comments': thread_comments, 'sections': sections}
+    return render(request, 'base/profile.html', context)
+
+
 def thread(request, pk):
     thread = Thread.objects.get(id=pk)
     thread_comments = thread.comment_set.all()
